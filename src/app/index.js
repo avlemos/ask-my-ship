@@ -1,5 +1,3 @@
-"use client";
-
 import { useState } from 'react';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,10 +19,7 @@ export default function Home() {
       }
 
       // Redirect to Wargaming auth page
-      const appID = process.env.WARGAMING_APP_ID;
-      console.log(appID);
-      window.location.href = `https://api.worldoftanks.eu/wot/auth/login/?application_id=6cb07d0432b6a854d67f6ed78a255884&redirect_uri=${encodeURIComponent(redirectUri)}`;
-      //window.location.href = `https://api.worldofwarships.com/wows/auth/opensea/?application_id=${encodeURIComponent(appID)}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+      window.location.href = `https://api.worldofwarships.com/wot/auth/login/?application_id=YOUR_APP_ID&redirect_uri=${encodeURIComponent(redirectUri)}`;
     } catch (err) {
       setError(err.message || 'Authentication failed');
       console.error(err);
