@@ -5,7 +5,7 @@ import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MLCEngine } from "@mlc-ai/web-llm";
 import LoadingProgress from '@/components/LoadingProgress';
-import StatsDisplay from '@/components/StatsDisplay';
+// import StatsDisplay from '@/components/StatsDisplay';
 import AnalysisDisplay from '@/components/AnalysisDisplay';
 import { PlayerStats } from '@/lib/types';
 import { analyzePlayerStats, limitPvpOccurrences } from '@/lib/utils';
@@ -82,7 +82,7 @@ export default function Home() {
         console.log("Init progress:", report);
         setLoadingProgress({
           progress: report.progress || 0,
-          total: report.total || 4309, //Hermes-3-Llama-3.1-8B-q4f16_1-MLC
+          total: report.total || 3886,//4309, //Hermes-3-Llama-3.1-8B-q4f16_1-MLC
           stage: report.text || 'Loading model...'
         });
       };
@@ -177,6 +177,17 @@ export default function Home() {
                 </div>
               )}
             </div>
+          )}
+          {!loading && !playerData && (
+                <div className="space-y-6 pb-4 mt-4 text-sm">This is what will happen now:
+                <ol className="list-decimal">
+                  <li>You login so we can get your user ID (so it works for hidden accounts)</li>
+                  <li>We then pull your statistics</li>
+                  <li>A LLM (think ChatGPT like) will be downloaded to your computer. This can take long.</li>
+                  <li>Then we feed the statistics through the LLM</li>
+                  <li>The LLM will go through your stats, using your HW (instead of the server)</li>
+                  </ol>
+                </div>
           )}
         </CardContent>
       </Card>
