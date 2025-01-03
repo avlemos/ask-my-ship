@@ -7,14 +7,6 @@ interface LoadingProgressProps {
   
   export default function LoadingProgress({ message, progress, total, stage }: LoadingProgressProps) {
     const done = Math.round(progress * total);
-    console.log('progress', progress);
-    console.log('total', total);
-    console.log('done', done);
-    //{
-//     "progress": 0.05433578315554528,
-//     "timeElapsed": 18,
-//     "text": "Fetching param cache[5/106]: 212MB fetched. 5% completed, 18 secs elapsed. It can take a while when we first visit this page to populate the cache. Later refreshes will become faster."
-// }
     return (
       <div className="w-full max-w-md mx-auto p-4">
         <div className="text-center mb-4">

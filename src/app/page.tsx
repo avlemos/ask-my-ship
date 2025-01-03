@@ -79,7 +79,7 @@ export default function Home() {
   useEffect(() => {
     if (playerData) {
       const initProgressCallback = (report: any) => {
-        console.log("Init progress:", report);
+        //console.log("Init progress:", report);
         setLoadingProgress({
           progress: report.progress || 0,
           total: report.total || 3886,//4309, //Hermes-3-Llama-3.1-8B-q4f16_1-MLC
@@ -95,7 +95,7 @@ export default function Home() {
           //await engineInstance.reload("Hermes-3-Llama-3.1-8B-q4f16_1-MLC");//2nd smallest
           setModel(engineInstance);
           setModelLoading(false);
-
+          
           // Optionally, analyze  s with the model
           setLoading(true);
           const analysis = await analyzePlayerStats(engineInstance, playerData);
@@ -111,6 +111,17 @@ export default function Home() {
       loadModel();
     }
   }, [playerData]);
+
+  async function analyseStats() {
+    setAnalysis(null);
+    setLoading(true);
+    if (playerData) {
+      const analysis = await analyzePlayerStats(model, playerData);
+    }
+    console.log('Analysis:', analysis);
+    setAnalysis(analysis);
+    setLoading(false);
+  }
 
   const handleWargamingAuth = () => {
 
@@ -176,6 +187,12 @@ export default function Home() {
                   <p className="mt-2">Analyzing data...</p>
                 </div>
               )}
+              <Button
+                onClick={analyseStats}
+                disabled={loading}
+              >
+                {'Roast Again.'}
+              </Button>
             </div>
           )}
           {!loading && !playerData && (
@@ -183,9 +200,9 @@ export default function Home() {
                 <ol className="list-decimal">
                   <li>You login so we can get your user ID (so it works for hidden accounts)</li>
                   <li>We then pull your statistics</li>
-                  <li>A LLM (think ChatGPT like) will be downloaded to your computer. This can take long.</li>
+                  <li>A LLM (think ChatGPT like) will be downloaded to your computer. This can take long (we're talking, downloading Gb).</li>
                   <li>Then we feed the statistics through the LLM</li>
-                  <li>The LLM will go through your stats, using your HW (instead of the server)</li>
+                  <li>The LLM will go through your stats, using your HW, hopefully your GPU (instead of the server)</li>
                   </ol>
                 </div>
           )}
