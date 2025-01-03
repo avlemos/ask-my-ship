@@ -35,10 +35,12 @@ Please analyze:
 
 Please provide specific, actionable insights based on these statistics.`;
 
+//console.log(prompt);
   const messages = [
-    { role: "system", content: "You should roast this player in 100 characters or less about the World of Warships game. Address the person in the third person (this/them)." },
+    { role: "system", content: "You should roast/shame this player about the World of Warships game. Address the person in the third person (this/them). Focus on the max_ variables and the wins/losses ratio (use a percentage for this for the wins, only). The reply should not have more than 400 characters." },
     { role: "user", content: JSON.stringify(stats) }
   ];
+  console.log(messages);
   try {
     const reply = await model.chat.completions.create({
       messages,
@@ -51,4 +53,30 @@ Please provide specific, actionable insights based on these statistics.`;
     console.error('Error analyzing stats:', error);
     return "Failed to analyze statistics. Please try again later.";
   }
+}
+
+export function limitPvpOccurrences(json: any, maxOccurrences: number) {
+  let occurrenceCount = 0;
+
+  function traverseAndFilter(obj: any): any {
+      if (Array.isArray(obj)) {
+          return obj.map(traverseAndFilter);
+      } else if (typeof obj === "object" && obj !== null) {
+          const newObj: Record<string, any> = {};
+          for (const key in obj) {
+              if (key === "pvp") {
+                  if (occurrenceCount < maxOccurrences) {
+                      occurrenceCount++;
+                      newObj[key] = traverseAndFilter(obj[key]);
+                  }
+              } else {
+                  newObj[key] = traverseAndFilter(obj[key]);
+              }
+          }
+          return newObj;
+      }
+      return obj;
+  }
+
+  return traverseAndFilter(json);
 }

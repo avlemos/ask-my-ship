@@ -11,9 +11,12 @@ export async function GET(request: Request) {
     }
 
     try {
+        //https://api.worldofwarships.eu/wows/ships/stats/?application_id=6cb07d0432b6a854d67f6ed78a255884
+        //const url = `https://api.worldofwarships.eu/wows/ships/stats/?` +
         const url = `https://api.worldofwarships.eu/wows/account/info/?` +
             `application_id=${process.env.NEXT_PUBLIC_WARGAMING_APP_ID}&` +
             `account_id=${accountId}&` +
+            //`fields=rank_solo.battles&` +
             `access_token=${token}`;
 
         const response = await fetch(url);

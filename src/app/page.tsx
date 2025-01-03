@@ -1,20 +1,22 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Card, CardHeader, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MLCEngine } from "@mlc-ai/web-llm";
 import LoadingProgress from '@/components/LoadingProgress';
 import StatsDisplay from '@/components/StatsDisplay';
 import AnalysisDisplay from '@/components/AnalysisDisplay';
 import { PlayerStats } from '@/lib/types';
-import { analyzePlayerStats } from '@/lib/utils';
+import { analyzePlayerStats, limitPvpOccurrences } from '@/lib/utils';
+import { Ship } from 'lucide-react';
+
 
 export default function Home() {
   const [playerData, setPlayerData] = useState<PlayerStats | null>(null);
   const [analysis, setAnalysis] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [modelLoading, setModelLoading] = useState(true);
+  const [modelLoading, setModelLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [model, setModel] = useState<any>(null);
   const [loadingProgress, setLoadingProgress] = useState({
@@ -27,33 +29,6 @@ export default function Home() {
     accountId?: string;
     nickname?: string;
   } | null>(null);
-
-  // Initialize WebLLM
-  useEffect(() => {
-    async function initWebLLM() {
-      try {
-
-        const initProgressCallback = (report: any) => {
-          console.log("Init progress:", report);
-          setLoadingProgress({
-            progress: report.progress || 0,
-            total: report.total || 0,
-            stage: report.text || 'Loading model...'
-          });
-        };        
-        setModelLoading(true);
-        //const engineInstance = new MLCEngine({ initProgressCallback });
-        //await engineInstance.reload("Hermes-2-Pro-Mistral-7B-q4f16_1-MLC");
-        //setModel(engineInstance);
-        setModelLoading(false);
-      } catch (err) {
-        setError('Failed to load WebLLM model');
-        console.error(err);
-        setModelLoading(false);
-      }
-    }
-    initWebLLM();
-  }, []);
 
   // Check for auth callback
   useEffect(() => {
@@ -81,6 +56,62 @@ export default function Home() {
     }
   }, []);
 
+  const fetchPlayerStats = async (token: string, accountId: string) => {
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/fetch-stats?token=${token}&account_id=${accountId}`);
+      const data = await response.json();
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      setPlayerData(data);
+    } catch (err) {
+      setError('Failed to fetch player stats');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Use useEffect to react to changes in playerData
+  useEffect(() => {
+    if (playerData) {
+      const initProgressCallback = (report: any) => {
+        console.log("Init progress:", report);
+        setLoadingProgress({
+          progress: report.progress || 0,
+          total: report.total || 4309, //Hermes-3-Llama-3.1-8B-q4f16_1-MLC
+          stage: report.text || 'Loading model...'
+        });
+      };
+
+      const loadModel = async () => {
+        try {
+          setModelLoading(true);
+          const engineInstance = new MLCEngine({ initProgressCallback });
+          await engineInstance.reload("Hermes-2-Pro-Mistral-7B-q4f16_1-MLC");//smallest
+          //await engineInstance.reload("Hermes-3-Llama-3.1-8B-q4f16_1-MLC");//2nd smallest
+          setModel(engineInstance);
+          setModelLoading(false);
+
+          // Optionally, analyze  s with the model
+          setLoading(true);
+          const analysis = await analyzePlayerStats(engineInstance, playerData);
+          console.log('Analysis:', analysis);
+          setAnalysis(analysis);
+          setLoading(false);
+        } catch (err) {
+          setError('Failed to load model');
+          console.error(err);
+        }
+      };
+
+      loadModel();
+    }
+  }, [playerData]);
+
   const handleWargamingAuth = () => {
 
     if (!process.env.NEXT_PUBLIC_REDIRECT_URI || !process.env.NEXT_PUBLIC_WARGAMING_APP_ID) {
@@ -90,56 +121,32 @@ export default function Home() {
     try {
       setLoading(true);
       const openidUrl = 'https://api.worldoftanks.eu/wot/auth/login/';
-      
+
       const params = new URLSearchParams({
-        application_id: process.env.NEXT_PUBLIC_WARGAMING_APP_ID || '',
-        redirect_uri: process.env.NEXT_PUBLIC_REDIRECT_URI || ''
+        application_id: process.env.NEXT_PUBLIC_WARGAMING_APP_ID,
+        redirect_uri: process.env.NEXT_PUBLIC_REDIRECT_URI,
       });
 
       window.location.href = `${openidUrl}?${params.toString()}`;
     } catch (err) {
-      setError('Authentication failed');
+      setError('Failed to initiate Wargaming authentication');
       console.error(err);
-      setLoading(false);
-    }
-  };
-
-  const fetchPlayerStats = async (token: string, accountId: string) => {
-    try {
-      setLoading(true);
-      const response = await fetch(`/api/fetch-stats?token=${token}&account_id=${accountId}`);
-      const data = await response.json();
-      
-      if (data.error) {
-        throw new Error(data.error);
-      }
-
-      setPlayerData(data);
-      const engineInstance = new MLCEngine({ });
-      await engineInstance.reload("Hermes-2-Pro-Mistral-7B-q4f16_1-MLC");
-      
-      //if (model) {
-        const analysis = await analyzePlayerStats(engineInstance, data);
-        console.log('Analysis:', analysis);
-        setAnalysis(analysis);
-      //}
-    } catch (err) {
-      setError('Failed to fetch player stats');
-      console.error(err);
-    } finally {
       setLoading(false);
     }
   };
 
   return (
     <main className="container mx-auto p-4">
-      <Card className="max-w-4xl mx-auto">
-        <CardHeader>
-          <h1 className="text-2xl font-bold">World of Warships Stats Analyzer</h1>
+      <Card className="mx-auto max-w-4xl">
+        <CardHeader className="border-b bg-white px-6 py-4">
+          <CardTitle className="flex items-center text-2xl font-bold text-gray-900">
+            <Ship className="mr-2 h-6 w-6 text-blue-600" />
+            World of Warships Stats Analyzer
+          </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className='mt-4'>
           {modelLoading ? (
-            <LoadingProgress 
+            <LoadingProgress
               message="Loading AI Model"
               progress={loadingProgress.progress}
               total={loadingProgress.total}
@@ -147,7 +154,7 @@ export default function Home() {
             />
           ) : !playerData ? (
             <div className="text-center">
-              <Button 
+              <Button
                 onClick={handleWargamingAuth}
                 disabled={loading}
               >
@@ -160,8 +167,8 @@ export default function Home() {
               )}
             </div>
           ) : (
-            <div className="space-y-6">
-              <StatsDisplay stats={playerData} />
+            <div className="space-y-6 pb-4">
+              {/* {<StatsDisplay stats={playerData} /> */}
               {analysis && <AnalysisDisplay analysis={analysis} />}
               {loading && (
                 <div className="text-center py-4">
