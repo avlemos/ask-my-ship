@@ -3,13 +3,24 @@
 import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MLCEngine } from "@mlc-ai/web-llm";
+import * as webllm from "@mlc-ai/web-llm";
 import LoadingProgress from '@/components/LoadingProgress';
 // import StatsDisplay from '@/components/StatsDisplay';
 import AnalysisDisplay from '@/components/AnalysisDisplay';
 import { PlayerStats } from '@/lib/types';
 import { analyzePlayerStats, limitPvpOccurrences } from '@/lib/utils';
 import { Ship } from 'lucide-react';
+
+const MODELS: { [key: string]: { name: string; size: number } } = {
+  MISTRAL_7B: {
+    name: "Hermes-2-Pro-Mistral-7B-q4f16_1-MLC",
+    size: 3886
+  },
+  LLAMA_31_8B: {
+    name: "Hermes-3-Llama-3.1-8B-q4f16_1-MLC",
+    size: 4309
+  }
+};
 
 
 export default function Home() {
@@ -29,6 +40,8 @@ export default function Home() {
     accountId?: string;
     nickname?: string;
   } | null>(null);
+
+  const useModel = MODELS.LLAMA_31_8B;
 
   // Check for auth callback
   useEffect(() => {
@@ -82,7 +95,7 @@ export default function Home() {
         //console.log("Init progress:", report);
         setLoadingProgress({
           progress: report.progress || 0,
-          total: report.total || 3886,//4309, //Hermes-3-Llama-3.1-8B-q4f16_1-MLC
+          total: report.total || useModel.size,
           stage: report.text || 'Loading model...'
         });
       };
@@ -90,16 +103,19 @@ export default function Home() {
       const loadModel = async () => {
         try {
           setModelLoading(true);
-          const engineInstance = new MLCEngine({ initProgressCallback });
-          await engineInstance.reload("Hermes-2-Pro-Mistral-7B-q4f16_1-MLC");//smallest
-          //await engineInstance.reload("Hermes-3-Llama-3.1-8B-q4f16_1-MLC");//2nd smallest
+          const appConfig = webllm.prebuiltAppConfig;
+          appConfig.useIndexedDBCache = true;
+          const engineInstance = new webllm.MLCEngine({ initProgressCallback: initProgressCallback, appConfig: appConfig });
+          await engineInstance.reload(useModel.name);
           setModel(engineInstance);
           setModelLoading(false);
           
           // Optionally, analyze  s with the model
           setLoading(true);
+          console.time('Analysis Duration');
           const analysis = await analyzePlayerStats(engineInstance, playerData);
-          console.log('Analysis:', analysis);
+          console.timeEnd('Analysis Duration'); 
+          console.log('Analysis: ', analysis);
           setAnalysis(analysis);
           setLoading(false);
         } catch (err) {
@@ -159,6 +175,7 @@ export default function Home() {
           {modelLoading ? (
             <LoadingProgress
               message="Loading AI Model"
+              modelname={Object.keys(MODELS).find(key => MODELS[key] === useModel) || ''}
               progress={loadingProgress.progress}
               total={loadingProgress.total}
               stage={loadingProgress.stage}

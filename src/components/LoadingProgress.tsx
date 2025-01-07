@@ -1,16 +1,17 @@
 interface LoadingProgressProps {
     message: string;
+    modelname: string;
     progress: number;
     total: number;
     stage: string;
   }
   
-  export default function LoadingProgress({ message, progress, total, stage }: LoadingProgressProps) {
+  export default function LoadingProgress({ message, modelname, progress, total, stage }: LoadingProgressProps) {
     const done = Math.round(progress * total);
     return (
       <div className="w-full max-w-md mx-auto p-4">
         <div className="text-center mb-4">
-          <h3 className="font-semibold text-lg mb-1">{message}</h3>
+          <h3 className="font-semibold text-lg mb-1">{message}: {modelname}</h3>
           <p className="text-sm text-gray-600">{stage}</p>
         </div>
         
