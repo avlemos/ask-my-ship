@@ -15,6 +15,9 @@ Then, you need to create a .env.local file, that looks something like this:
 NEXT_PUBLIC_WARGAMING_APP_ID=you_need_to_register_with_wargaming_for_this
 NEXT_PUBLIC_REDIRECT_URI=http://localhost:3000/api/auth/callback
 
+mind you, that pointing to anything other than localhost, without https, may lead to weird behaviours (cache wise)
+
+
 Then, run the development server:
 
 ```bash
